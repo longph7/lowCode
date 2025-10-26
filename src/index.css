@@ -1,0 +1,29 @@
+/* @import "tailwindcss"; */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 预览模式样式 */
+.preview-mode {
+  background-color: #f8fafc;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  overflow: auto;
+}
+
+.edit-mode {
+  background-color: #ffffff;
+  border: 1px dashed #e2e8f0;
+  border-radius: 4px;
+}
+
+/* 预览模式下隐藏拖拽提示等编辑相关元素 */
+.preview-mode * {
+  cursor: default !important;
+}
+
+.preview-mode .drop-hint,
+.preview-mode .drag-handle {
+  display: none !important;
+}

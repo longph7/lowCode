@@ -1,0 +1,161 @@
+/* 拖拽预览样式 */
+.drop-preview-container {
+    position: relative;
+    pointer-events: none;
+}
+
+/* 插入线动画 */
+@keyframes insertLinePulse {
+    0%, 100% {
+        opacity: 1;
+        transform: scaleY(1);
+    }
+    50% {
+        opacity: 0.7;
+        transform: scaleY(0.8);
+    }
+}
+
+.insert-line {
+    position: absolute;
+    z-index: 50;
+    pointer-events: none;
+    background: linear-gradient(90deg, #3b82f6, #60a5fa, #3b82f6);
+    border-radius: 1px;
+    box-shadow: 0 0 8px rgba(59, 130, 246, 0.6);
+    animation: insertLinePulse 1.5s ease-in-out infinite;
+}
+
+.insert-line::before,
+.insert-line::after {
+    content: '';
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    background: #3b82f6;
+    border-radius: 50%;
+    top: -2px;
+    box-shadow: 0 0 4px rgba(59, 130, 246, 0.8);
+}
+
+.insert-line::before {
+    left: -3px;
+}
+
+.insert-line::after {
+    right: -3px;
+}
+
+/* 高亮区域动画 */
+@keyframes highlightPulse {
+    0%, 100% {
+        background-color: rgba(59, 130, 246, 0.08);
+        border-color: rgba(59, 130, 246, 0.3);
+    }
+    50% {
+        background-color: rgba(59, 130, 246, 0.15);
+        border-color: rgba(59, 130, 246, 0.5);
+    }
+}
+
+.highlight-area {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 40;
+    border: 2px dashed transparent;
+    border-radius: 6px;
+    animation: highlightPulse 2s ease-in-out infinite;
+}
+
+/* 占位符动画 */
+@keyframes placeholderFloat {
+    0%, 100% {
+        transform: translateY(0px);
+        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+    }
+    50% {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+    }
+}
+
+.placeholder-box {
+    position: absolute;
+    pointer-events: none;
+    z-index: 40;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(147, 197, 253, 0.2));
+    border: 2px dashed #3b82f6;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: #3b82f6;
+    font-weight: 600;
+    animation: placeholderFloat 2s ease-in-out infinite;
+    backdrop-filter: blur(2px);
+}
+
+/* 容器悬停效果 */
+.container-hover {
+    background-color: rgba(59, 130, 246, 0.03) !important;
+    transition: all 0.3s ease;
+}
+
+.container-can-drop {
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.2);
+}
+
+/* 拖拽项悬停时的容器效果 */
+.drag-over-container {
+    background: linear-gradient(135deg, 
+        rgba(59, 130, 246, 0.02) 0%, 
+        rgba(59, 130, 246, 0.05) 50%, 
+        rgba(59, 130, 246, 0.02) 100%);
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .insert-line {
+        height: 3px;
+    }
+    
+    .insert-line::before,
+    .insert-line::after {
+        width: 8px;
+        height: 8px;
+        top: -2.5px;
+    }
+    
+    .placeholder-box {
+        font-size: 11px;
+        padding: 8px 12px;
+    }
+}
+
+/* 深色主题支持 */
+@media (prefers-color-scheme: dark) {
+    .insert-line {
+        background: linear-gradient(90deg, #60a5fa, #93c5fd, #60a5fa);
+        box-shadow: 0 0 8px rgba(96, 165, 250, 0.6);
+    }
+    
+    .insert-line::before,
+    .insert-line::after {
+        background: #60a5fa;
+        box-shadow: 0 0 4px rgba(96, 165, 250, 0.8);
+    }
+    
+    .highlight-area {
+        background-color: rgba(96, 165, 250, 0.1);
+        border-color: rgba(96, 165, 250, 0.4);
+    }
+    
+    .placeholder-box {
+        background: linear-gradient(135deg, rgba(96, 165, 250, 0.15), rgba(147, 197, 253, 0.25));
+        border-color: #60a5fa;
+        color: #93c5fd;
+    }
+}
