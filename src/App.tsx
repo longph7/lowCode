@@ -1,4 +1,4 @@
-import LowcodeEditor from "./editor";
+import LowcodeEditor from "./editor/HybridLowcodeEditor";
 import GlobalDragPreview from "./editor/components/GlobalDragPreview";
 
 export default function App() {

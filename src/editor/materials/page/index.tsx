@@ -11,7 +11,7 @@ import DropPreview from '../../components/DropPreview.tsx'
 export default function Page({ id, children }: CommonComponentProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const { canDrop, isOver, dropRef, dropPreview } = useEnhancedMaterialDrops(
-        ['Button', 'Container', 'Header', 'Input', 'Image', 'Text', 'Div'], 
+        ['Button', 'Container', 'Header', 'Input', 'Image', 'Text', 'Div', 'ImageUpload', 'PreAnnotation', 'AnnotationCanvas'], 
         id
     );
 
