@@ -1,70 +1,80 @@
 import { Form, Input, InputNumber, Select, Switch, message } from "antd";
-import useComponentsStore from '../stores/components.tsx';
+import { useComponentsStore } from '../stores/new-components';
 import { useComponentConfigStore } from '../stores/component-config.tsx';
-import { useMemo, useCallback } from 'react';
+import { useMemo, useCallback, useEffect, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import OptimizedColorPicker from '../components/OptimizedColorPicker';
 
 const { Option } = Select;
 
 export default function ComponentProps() {
+    const [titleDraft, setTitleDraft] = useState('');
+
     // 订阅当前选中的组件和更新方法（使用节流版本）
-    const { curComponent, updateComponent, updateComponentThrottled } = useComponentsStore(
+    const { curNode, updateNode, updateNodeThrottled } = useComponentsStore(
         useShallow((state) => ({
-            curComponent: state.curComponent,
-            updateComponent: state.updateComponent,
-            updateComponentThrottled: state.updateComponentThrottled
+            curNode: state.curNode,
+            updateNode: state.updateNode,
+            updateNodeThrottled: state.updateNodeThrottled
         }))
     );
-    
+
     // 订阅组件配置信息
     const { componentConfig } = useComponentConfigStore(
         useShallow((state) => ({
             componentConfig: state.componentConfig
         }))
     );
-    
+
     // 获取当前组件的配置信息
     const currentConfig = useMemo(() => {
-        if (!curComponent) return null;
-        return componentConfig[curComponent.name] || null;
-    }, [curComponent, componentConfig]);
+        if (!curNode) return null;
+        return componentConfig[curNode.type] || null;
+    }, [curNode, componentConfig]);
+
+    useEffect(() => {
+        if (curNode?.type === 'Title') {
+            setTitleDraft(curNode.props?.text ?? curNode.props?.title ?? 'Main Title');
+            return;
+        }
+
+        setTitleDraft('');
+    }, [curNode]);
 
     // 立即更新组件属性（用于点击、输入等操作）
     const updateProps = useCallback((newProps: Record<string, any>) => {
-        if (!curComponent) {
+        if (!curNode) {
             message.warning('请先选择一个组件');
             return;
         }
-        
+
         const updatedProps = {
-            ...curComponent.props,
+            ...curNode.props,
             ...newProps
         };
-        
-        updateComponent(curComponent.id, updatedProps);
+
+        updateNode(curNode.id, { props: updatedProps });
         message.success('属性已更新');
-    }, [curComponent, updateComponent]);
+    }, [curNode, updateNode]);
 
     // 节流更新组件属性（用于拖拽、连续操作）
     const updatePropsThrottled = useCallback((newProps: Record<string, any>) => {
-        if (!curComponent) {
+        if (!curNode) {
             return;
         }
-        
         const updatedProps = {
-            ...curComponent.props,
+            ...curNode.props,
             ...newProps
         };
-        
+
         // 使用节流版本，避免频繁更新
-        updateComponentThrottled(curComponent.id, updatedProps);
-    }, [curComponent, updateComponentThrottled]);
+        updateNodeThrottled(curNode.id, { props: updatedProps });
+    }, [curNode, updateNodeThrottled]);
     
     // 如果没有选中组件，显示提示信息
-    if (!curComponent) {
+    if (!curNode) {
         return (
-            <div style={{ padding: '16px', textAlign: 'center', color: '#999' }}>
+            <div style={{ height: '100%', overflowY: 'auto', overflowX: 'hidden', padding: '16px', textAlign: 'center', color: '#999' }}>
                 请选择一个组件查看属性
             </div>
         );
@@ -72,9 +82,9 @@ export default function ComponentProps() {
 
     // 根据组件类型渲染不同的属性编辑器
     const renderPropsEditor = () => {
-        const props = curComponent.props || {};
-        
-        switch (curComponent.name) {
+        const props = curNode.props || {};
+
+        switch (curNode.type) {
             case 'Button':
                 return (
                     <>
@@ -220,6 +230,63 @@ export default function ComponentProps() {
                     </>
                 );
             
+            case 'Title':
+                return (
+                    <>
+                        <Form.Item label="标题文本">
+                            <Input
+                                value={titleDraft}
+                                onChange={(e) => {
+                                    const nextValue = e.target.value;
+                                    setTitleDraft(nextValue);
+                                    updatePropsThrottled({ text: nextValue, title: nextValue });
+                                }}
+                                onBlur={() => updateProps({ text: titleDraft, title: titleDraft })}
+                            />
+                        </Form.Item>
+                        <Form.Item label="字体大小">
+                            <InputNumber
+                                value={props.fontSize || 48}
+                                onChange={(value) => updateProps({ fontSize: value })}
+                                addonAfter="px"
+                                min={12}
+                                max={160}
+                            />
+                        </Form.Item>
+                        <Form.Item label="字重">
+                            <Select
+                                value={props.fontWeight || 700}
+                                onChange={(value) => updateProps({ fontWeight: value })}
+                            >
+                                <Option value={400}>Regular</Option>
+                                <Option value={500}>Medium</Option>
+                                <Option value={600}>SemiBold</Option>
+                                <Option value={700}>Bold</Option>
+                                <Option value={800}>ExtraBold</Option>
+                            </Select>
+                        </Form.Item>
+                        <Form.Item label="文字颜色">
+                            <OptimizedColorPicker
+                                value={props.color || '#111827'}
+                                onChange={(color: string) => updateProps({ color })}
+                                onChangeThrottled={(color: string) => updatePropsThrottled({ color })}
+                                showText
+                                throttleDelay={100}
+                            />
+                        </Form.Item>
+                        <Form.Item label="对齐方式">
+                            <Select
+                                value={props.textAlign || 'left'}
+                                onChange={(value) => updateProps({ textAlign: value })}
+                            >
+                                <Option value="left">左对齐</Option>
+                                <Option value="center">居中</Option>
+                                <Option value="right">右对齐</Option>
+                            </Select>
+                        </Form.Item>
+                    </>
+                );
+
             case 'Input':
                 return (
                     <>
@@ -428,23 +495,23 @@ export default function ComponentProps() {
     };
     
     return (
-        <div style={{ padding: '16px' }}>
+        <div style={{ height: '100%', overflowY: 'auto', overflowX: 'hidden', padding: '16px' }}>
             {/* 组件类型信息 */}
-            <div style={{ 
-                marginBottom: '16px', 
-                padding: '8px', 
-                backgroundColor: '#f5f5f5', 
-                borderRadius: '4px' 
+            <div style={{
+                marginBottom: '16px',
+                padding: '8px',
+                backgroundColor: '#f5f5f5',
+                borderRadius: '4px'
             }}>
-                <strong>组件类型：</strong> {curComponent.name} ({currentConfig?.desc || '未知'})
+                <strong>组件类型：</strong> {curNode.type} ({currentConfig?.desc || '未知'})
             </div>
-            
+
             {/* 组件属性表单 */}
             <Form layout="vertical" size="small">
                 <Form.Item label="组件ID">
-                    <Input value={curComponent.id} disabled />
+                    <Input value={curNode.id} disabled />
                 </Form.Item>
-                
+
                 {renderPropsEditor()}
             </Form>
         </div>

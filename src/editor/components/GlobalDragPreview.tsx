@@ -1,9 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useDragStore } from '../stores/dragStore';
 import './DragPreviewStyles.css';
-
-// 导入物料组件
 import Input from '../materials/input';
+import TextArea from '../materials/textarea';
+import SelectField from '../materials/select-field';
+import RadioGroupField from '../materials/radio-group';
+import CheckboxGroupField from '../materials/checkbox-group';
 import Button from '../materials/button';
 import Text from '../materials/text';
 import Container from '../materials/container';
@@ -11,109 +13,158 @@ import Page from '../materials/page';
 import Image from '../materials/image';
 import Header from '../materials/header';
 import Div from '../materials/div';
-import ImageUpload from '../materials/image-upload';
-import PreAnnotation from '../materials/pre-annotation';
-import AnnotationCanvas from '../materials/annotation-canvas';
+import Title from '../materials/title';
+import Shape from '../materials/shape';
+import Divider from '../materials/divider';
+import Icon from '../materials/icon';
 
 export default function GlobalDragPreview() {
     const isDragging = useDragStore((state) => state.isDragging);
     const draggedItem = useDragStore((state) => state.draggedItem);
-    const insertPreview = useDragStore((state) => state.insertPreview);
-    const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+    const clearDragState = useDragStore((state) => state.clearDragState);
+    const latestPositionRef = useRef<{ x: number; y: number } | null>(null);
+    const previewRef = useRef<HTMLDivElement | null>(null);
+    const rafIdRef = useRef<number | null>(null);
 
-    // 跟踪鼠标位置
     useEffect(() => {
-        if (!isDragging) return;
+        if (!isDragging) {
+            if (rafIdRef.current !== null) {
+                cancelAnimationFrame(rafIdRef.current);
+                rafIdRef.current = null;
+            }
+            latestPositionRef.current = null;
+            if (previewRef.current) {
+                previewRef.current.style.transform = 'translate3d(0px, 0px, 0)';
+            }
+            return;
+        }
+
+        const schedulePositionUpdate = (x: number, y: number) => {
+            latestPositionRef.current = { x, y };
+            if (rafIdRef.current !== null) {
+                return;
+            }
+
+            rafIdRef.current = requestAnimationFrame(() => {
+                const latest = latestPositionRef.current;
+                const node = previewRef.current;
+                if (latest && node) {
+                    node.style.transform = `translate3d(${latest.x}px, ${latest.y}px, 0)`;
+                }
+                rafIdRef.current = null;
+            });
+        };
 
         const handleMouseMove = (e: MouseEvent) => {
-            setMousePosition({ x: e.clientX, y: e.clientY });
+            schedulePositionUpdate(e.clientX, e.clientY);
+        };
+
+        const handleDragOver = (e: DragEvent) => {
+            schedulePositionUpdate(e.clientX, e.clientY);
+        };
+
+        const handleDragCleanup = () => {
+            clearDragState();
         };
 
         document.addEventListener('mousemove', handleMouseMove);
-        return () => document.removeEventListener('mousemove', handleMouseMove);
-    }, [isDragging]);
+        document.addEventListener('dragover', handleDragOver);
+        window.addEventListener('dragend', handleDragCleanup);
+        window.addEventListener('drop', handleDragCleanup);
+        window.addEventListener('mouseup', handleDragCleanup);
 
-    if (!isDragging || !draggedItem) {
-        return null;
-    }
+        return () => {
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('dragover', handleDragOver);
+            window.removeEventListener('dragend', handleDragCleanup);
+            window.removeEventListener('drop', handleDragCleanup);
+            window.removeEventListener('mouseup', handleDragCleanup);
+            if (rafIdRef.current !== null) {
+                cancelAnimationFrame(rafIdRef.current);
+                rafIdRef.current = null;
+            }
+        };
+    }, [clearDragState, isDragging]);
 
-    // 根据组件类型渲染对应的组件预览
-    const renderComponentPreview = (componentType: string) => {
-        // 创建一个临时的props对象，使用默认值
+    const previewContent = useMemo(() => {
+        if (!draggedItem) {
+            return null;
+        }
+
         const defaultProps = {};
-        
-        // 使用时间戳作为唯一ID
-        const tempId = Date.now();
-        
+        const tempId = `preview_${draggedItem.componentType || draggedItem.name}`;
+        const componentType = draggedItem.componentType || draggedItem.name;
+
         switch (componentType) {
             case 'Input':
                 return <Input id={tempId} name={componentType} {...defaultProps} />;
+            case 'TextArea':
+                return <TextArea id={tempId} name={componentType} {...defaultProps} />;
+            case 'Select':
+                return <SelectField id={tempId} name={componentType} {...defaultProps} />;
+            case 'RadioGroup':
+                return <RadioGroupField id={tempId} name={componentType} {...defaultProps} />;
+            case 'CheckboxGroup':
+                return <CheckboxGroupField id={tempId} name={componentType} {...defaultProps} />;
             case 'Button':
-                return <Button id={tempId} name={componentType} text="按钮" {...defaultProps} />;
+                return <Button id={tempId} name={componentType} text="Submit" {...defaultProps} />;
             case 'Text':
-                return <Text id={tempId} name={componentType} content="文本预览" {...defaultProps} />;
+                return <Text id={tempId} name={componentType} content="Question text" {...defaultProps} />;
             case 'Container':
                 return <Container id={tempId} name={componentType} {...defaultProps} />;
             case 'Page':
                 return <Page id={tempId} name={componentType} {...defaultProps} />;
             case 'Image':
-                return <Image id={tempId} name={componentType} {...defaultProps} />;
+                return (
+                    <Image
+                        id={tempId}
+                        name={componentType}
+                        src={draggedItem.props?.src}
+                        alt={draggedItem.props?.alt || draggedItem.name}
+                        objectFit={draggedItem.props?.objectFit || 'contain'}
+                        {...defaultProps}
+                    />
+                );
             case 'Header':
                 return <Header id={tempId} name={componentType} {...defaultProps} />;
+            case 'Title':
+                return <Title id={tempId} name={componentType} {...defaultProps} />;
             case 'Div':
                 return <Div id={tempId} name={componentType} {...defaultProps} />;
-            case 'ImageUpload':
-                return <ImageUpload id={tempId} name={componentType} {...defaultProps} />;
-            case 'PreAnnotation':
-                return <PreAnnotation id={tempId} name={componentType} {...defaultProps} />;
-            case 'AnnotationCanvas':
-                return <AnnotationCanvas id={tempId} name={componentType} {...defaultProps} />;
+            case 'Shape':
+                return <Shape id={tempId} name={componentType} {...defaultProps} />;
+            case 'Divider':
+                return <Divider id={tempId} name={componentType} {...defaultProps} />;
+            case 'Icon':
+                return <Icon id={tempId} name={componentType} {...defaultProps} />;
             default:
                 return <div>{componentType}</div>;
         }
-    };
+    }, [draggedItem]);
+
+    if (!isDragging || !draggedItem) {
+        return null;
+    }
 
     return (
         <>
-            {/* 拖拽项跟随鼠标的预览 - 显示实际组件预览 */}
             <div
+                ref={previewRef}
                 className="fixed pointer-events-none z-[9999] max-w-xs"
                 style={{
-                    left: mousePosition.x + 10,
-                    top: mousePosition.y - 10,
-                    transform: 'translate(0, -50%)',
+                    left: 0,
+                    top: 0,
                     opacity: 0.8,
                     filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.2))',
+                    transform: 'translate3d(0px, 0px, 0)'
                 }}
             >
-                <div className="border-2 border-blue-400 rounded bg-white bg-opacity-90 p-1" style={{minWidth: '100px', pointerEvents: 'none'}}>
-                    {draggedItem && renderComponentPreview(draggedItem.name)}
+                <div className="border-2 border-blue-400 rounded bg-white bg-opacity-90 p-1" style={{ minWidth: '100px', pointerEvents: 'none' }}>
+                    {previewContent}
                 </div>
             </div>
 
-            {/* 全局插入预览 */}
-            {insertPreview && (
-                <div
-                    className="fixed pointer-events-none z-[9998]"
-                    style={{
-                        left: 0,
-                        top: 0,
-                        width: '100%',
-                        height: '100%'
-                    }}
-                >
-                    {/* 这里可以添加全局的插入线或其他预览效果 */}
-                </div>
-            )}
 
-            {/* 拖拽时的全局遮罩 */}
-            <div
-                className="fixed inset-0 pointer-events-none z-[9997]"
-                style={{
-                    background: 'rgba(59, 130, 246, 0.02)',
-                    backdropFilter: 'blur(0.5px)'
-                }}
-            />
         </>
     );
 }

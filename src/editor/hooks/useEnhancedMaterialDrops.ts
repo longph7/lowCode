@@ -1,13 +1,10 @@
 import { useDrop } from 'react-dnd'
 import { message } from 'antd'
 import { useState, useCallback, useRef, useEffect } from 'react'
-import useComponentsStore from '../stores/components.tsx'
+import { useComponentsStore } from '../stores/new-components'
 import { useComponentConfigStore } from '../stores/component-config.tsx'
-import { useDragStore } from '../stores/dragStore'
-import { 
-    calculatePreciseInsertPosition, 
-    getInsertLinePosition
-} from '../utils/dragUtils'
+import { calculatePreciseInsertPosition, getInsertLinePosition } from '../utils/dragUtils'
+import { getDefaultComponentSize } from './dropShared'
 
 export interface DropPosition {
     x: number;
@@ -23,39 +20,62 @@ export interface DropPreview {
     type: 'line' | 'highlight' | 'placeholder';
 }
 
-export default function useEnhancedMaterialDrops(accept: string[], id: number) {
-    const { addComponent } = useComponentsStore((state) => state);
+interface DragMaterialItem {
+    name: string;
+    componentType?: string;
+    props?: Record<string, any>;
+}
+
+export default function useEnhancedMaterialDrops(accept: string[], id: string) {
+    const { addNode } = useComponentsStore((state) => state);
     const { componentConfig } = useComponentConfigStore((state) => state);
-    // const setHoveredContainer = useDragStore((state) => state.setHoveredContainer);
-    
+
     const [dropPreview, setDropPreview] = useState<DropPreview>({
         show: false,
         position: { x: 0, y: 0 },
-        type: 'highlight'
+        type: 'line'
     });
-    
+
     const dropRef = useRef<HTMLDivElement>(null);
     const previewTimeoutRef = useRef<number>(0);
 
-    // 计算插入位置（使用节流优化性能）
+    const getCanvasZoom = useCallback((element: HTMLElement) => {
+        const zoomHost = element.closest('[data-canvas-zoom]') as HTMLElement | null;
+        const zoomValue = Number(zoomHost?.getAttribute('data-canvas-zoom') || '1');
+        return Number.isFinite(zoomValue) && zoomValue > 0 ? zoomValue : 1;
+    }, []);
+
     const calculateInsertPosition = useCallback((clientOffset: { x: number; y: number }, dropTargetRef: HTMLElement) => {
         const insertPos = calculatePreciseInsertPosition(clientOffset, dropTargetRef);
         const linePos = getInsertLinePosition(insertPos, dropTargetRef);
-        
+        const zoom = getCanvasZoom(dropTargetRef);
+
         return {
-            x: linePos.x,
-            y: linePos.y,
-            width: linePos.width,
+            x: linePos.x / zoom,
+            y: linePos.y / zoom,
+            width: linePos.width / zoom,
             insertIndex: insertPos.index,
             insertPosition: insertPos.position,
             targetElement: insertPos.element
         };
-    }, []);
+    }, [getCanvasZoom]);
 
-    // 更新预览状态
+    const calculateCursorPosition = useCallback(
+        (clientOffset: { x: number; y: number }, dropTargetRef: HTMLElement) => {
+            const rect = dropTargetRef.getBoundingClientRect();
+            const zoom = getCanvasZoom(dropTargetRef);
+
+            return {
+                x: Math.max(0, (clientOffset.x - rect.left) / zoom),
+                y: Math.max(0, (clientOffset.y - rect.top) / zoom),
+            };
+        },
+        [getCanvasZoom]
+    );
+
     const updatePreview = useCallback((monitor: any) => {
         if (!monitor.isOver({ shallow: true })) {
-            setDropPreview(prev => ({ ...prev, show: false }));
+            setDropPreview((prev) => ({ ...prev, show: false }));
             return;
         }
 
@@ -64,7 +84,7 @@ export default function useEnhancedMaterialDrops(accept: string[], id: number) {
 
         if (clientOffset && dropTargetRef) {
             const position = calculateInsertPosition(clientOffset, dropTargetRef);
-            
+
             setDropPreview({
                 show: true,
                 position,
@@ -75,64 +95,58 @@ export default function useEnhancedMaterialDrops(accept: string[], id: number) {
 
     const [{ canDrop, isOver, isOverCurrent }, drop] = useDrop(() => ({
         accept,
-        drop: (item: { name: string }, monitor) => {
-            // 检查是否已经在其他容器中处理了放置
-            const didDrop = monitor.didDrop();
-            if (didDrop) return;
+        drop: (item: DragMaterialItem, monitor) => {
+            if (monitor.didDrop()) return;
 
             const clientOffset = monitor.getClientOffset();
             const dropTargetRef = dropRef.current;
 
             if (clientOffset && dropTargetRef) {
+                const componentType = item.componentType || item.name;
                 const position = calculateInsertPosition(clientOffset, dropTargetRef);
-                
-                const props = componentConfig?.[item.name]?.defaultProps;
-                const desc = componentConfig?.[item.name]?.desc;
+                const cursorPosition = calculateCursorPosition(clientOffset, dropTargetRef);
+                const props = componentConfig?.[componentType]?.defaultProps;
+                const defaultSize = getDefaultComponentSize(componentType);
 
-                // 创建新组件
-                const newComponent = {
-                    id: Date.now(),
-                    name: item.name,
-                    props: props || {},
-                    children: [],
-                    desc: desc || '',
-                    position: { x: position.x, y: position.y }
-                };
+                message.success(` ${item.name} `);
+                addNode({
+                    type: componentType,
+                    props: { ...props, ...(item.props || {}) },
+                    parentId: id,
+                    position: {
+                        x: cursorPosition.x,
+                        y: cursorPosition.y,
+                        width: defaultSize.width,
+                        height: defaultSize.height
+                    }
+                });
 
-                message.success(`成功添加 ${item.name} 组件到容器！`);
-                addComponent(newComponent, id);
-                
-                console.log('dropped item to container:', item, 'at position:', position);
+                console.log('dropped item to container:', item, 'at position:', position, 'cursor:', cursorPosition);
             }
 
-            // 清除预览
-            setDropPreview(prev => ({ ...prev, show: false }));
+            setDropPreview((prev) => ({ ...prev, show: false }));
         },
         hover: (_item, monitor) => {
-            // 清除之前的定时器
             if (previewTimeoutRef.current) {
                 clearTimeout(previewTimeoutRef.current);
             }
 
-            // 延迟更新预览，避免闪烁
             previewTimeoutRef.current = window.setTimeout(() => {
                 updatePreview(monitor);
-            }, 16); // 约60fps
+            }, 16);
         },
         collect: (monitor) => ({
             canDrop: monitor.canDrop(),
             isOver: monitor.isOver(),
-            isOverCurrent: monitor.isOver({ shallow: true }),
-        }),
-    }), [accept, id, addComponent, componentConfig, updatePreview]);
+            isOverCurrent: monitor.isOver({ shallow: true })
+        })
+    }), [accept, id, addNode, componentConfig, updatePreview]);
 
-    // 组合 refs
     const combinedRef = useCallback((node: HTMLDivElement) => {
         dropRef.current = node;
         drop(node);
     }, [drop]);
 
-    // 清理定时器
     useEffect(() => {
         return () => {
             if (previewTimeoutRef.current) {
@@ -141,10 +155,9 @@ export default function useEnhancedMaterialDrops(accept: string[], id: number) {
         };
     }, []);
 
-    // 当不再悬停时清除预览
     useEffect(() => {
         if (!isOverCurrent) {
-            setDropPreview(prev => ({ ...prev, show: false }));
+            setDropPreview((prev) => ({ ...prev, show: false }));
         }
     }, [isOverCurrent]);
 
@@ -156,3 +169,5 @@ export default function useEnhancedMaterialDrops(accept: string[], id: number) {
         dropPreview
     };
 }
+
+

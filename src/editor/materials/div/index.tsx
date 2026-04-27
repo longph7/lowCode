@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import { useRef, type CSSProperties, type RefObject } from 'react';
 import type { CommonComponentProps } from '../../stores/interface.ts';
 import useEnhancedMaterialDrops from '../../hooks/useEnhancedMaterialDrops.ts';
 import DropPreview from '../../components/DropPreview.tsx';
@@ -16,9 +16,8 @@ interface DivProps extends CommonComponentProps {
     alignItems?: 'flex-start' | 'center' | 'flex-end' | 'stretch';
 }
 
-export default function Div({ 
-    id, 
-    name, 
+export default function Div({
+    id,
     children,
     backgroundColor = 'transparent',
     padding = 10,
@@ -31,22 +30,20 @@ export default function Div({
     justifyContent = 'flex-start',
     alignItems = 'flex-start',
     style,
-    className
+    className,
 }: DivProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const { canDrop, isOver, dropRef, dropPreview } = useEnhancedMaterialDrops(
-        ['Button', 'Container', 'Header', 'Input', 'Image', 'Text', 'Div', 'ImageUpload', 'PreAnnotation', 'AnnotationCanvas'], 
+        ['Container', 'Div', 'Header', 'Title', 'Text', 'Image', 'Shape', 'Divider', 'Icon'],
         id
     );
 
-    // 组合 refs
     const combinedRef = (node: HTMLDivElement) => {
         containerRef.current = node;
         dropRef(node);
     };
-    
-    // 基础样式
-    const baseStyles: React.CSSProperties = {
+
+    const baseStyles: CSSProperties = {
         backgroundColor: isOver ? 'rgba(59, 130, 246, 0.05)' : backgroundColor,
         padding: `${padding}px`,
         margin: `${margin}px`,
@@ -58,24 +55,19 @@ export default function Div({
         justifyContent: display.includes('flex') ? justifyContent : undefined,
         alignItems: display.includes('flex') ? alignItems : undefined,
         transition: 'all 0.2s ease',
-        position: 'relative'
-    };
-
-    // 合并样式，style中的样式优先级最高
-    const mergedStyles: React.CSSProperties = {
-        ...baseStyles,
-        ...style
+        position: 'relative',
+        ...style,
     };
 
     return (
-        <div 
+        <div
             data-component-id={id}
             ref={combinedRef}
-            style={mergedStyles}
+            style={baseStyles}
             className={className}
         >
             {children}
-            <DropPreview preview={dropPreview} containerRef={containerRef as React.RefObject<HTMLElement>} />
+            <DropPreview preview={dropPreview} containerRef={containerRef as RefObject<HTMLElement>} />
         </div>
     );
 }

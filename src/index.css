@@ -4,7 +4,29 @@
 @tailwind components;
 @tailwind utilities;
 
-/* 预览模式样式 */
+html,
+body,
+#root {
+  height: 100%;
+}
+
+html {
+  scrollbar-gutter: stable;
+}
+
+body {
+  margin: 0;
+  overflow: hidden;
+}
+
+::clone {
+  visibility: hidden;
+}
+
+.ReactDnDPreview {
+  display: none !important;
+}
+
 .preview-mode {
   background-color: #f8fafc;
   border-radius: 8px;
@@ -18,12 +40,19 @@
   border-radius: 4px;
 }
 
-/* 预览模式下隐藏拖拽提示等编辑相关元素 */
 .preview-mode * {
   cursor: default !important;
 }
 
 .preview-mode .drop-hint,
 .preview-mode .drag-handle {
+  display: none !important;
+}
+
+body .react-dnd-preview {
+  display: none !important;
+}
+
+.drag-preview-image {
   display: none !important;
 }

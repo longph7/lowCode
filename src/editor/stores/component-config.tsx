@@ -1,193 +1,239 @@
-import { create } from "zustand";
-import Container from "../materials/container";
-import Button from "../materials/button";
-import Page from "../materials/page";
-import Header from "../materials/header";
-import Input from "../materials/input";
-import Image from "../materials/image";
-import Text from "../materials/text";
-import Div from "../materials/div";
-import ImageUpload from "../materials/image-upload";
-import PreAnnotation from "../materials/pre-annotation";
-import AnnotationCanvas from "../materials/annotation-canvas";
+import { create } from 'zustand';
+import Container from '../materials/container';
+import Button from '../materials/button';
+import Page from '../materials/page';
+import Header from '../materials/header';
+import Input from '../materials/input';
+import TextArea from '../materials/textarea';
+import SelectField from '../materials/select-field';
+import RadioGroupField from '../materials/radio-group';
+import CheckboxGroupField from '../materials/checkbox-group';
+import Image from '../materials/image';
+import Text from '../materials/text';
+import Div from '../materials/div';
+import Title from '../materials/title';
+import Shape from '../materials/shape';
+import Divider from '../materials/divider';
+import Icon from '../materials/icon';
 
 export interface ComponentConfig {
     name: string;
     defaultProps: Record<string, any>;
     component: any;
     desc: string;
-    category?: string; // 新增：组件分类
-    setters?:ComponentSetter[];
+    category?: string;
+    setters?: ComponentSetter[];
 }
+
 export interface ComponentSetter {
     name: string;
     label: string;
     type: string;
     options?: string;
-    [key: string]: any
+    [key: string]: any;
 }
 
 export interface State {
-    componentConfig: { [key: string]: ComponentConfig }
-
+    componentConfig: { [key: string]: ComponentConfig };
 }
+
 export interface Action {
     registerComponent: (name: string, componentConfig: ComponentConfig) => void;
 }
 
-//组件对应名字
-export const useComponentConfigStore = create<State & Action>(
-    (set) => ({
-        componentConfig: {
-            Container: {
-                name: 'Container',
-                defaultProps: {},
-                component: Container,
-                desc: '容器',
-                category: '基础组件'
-            },
-            Button: {
-                name: 'Button',
-                defaultProps: {
-                    text: '按钮',
-                    type: 'default',
-                    size: 'middle',
-                    shape: 'round'
-                },
-                setters:[
-                    {
-                        name:'text',
-                        label:'文本',
-                        type:'input'
-                    },
-                    {
-                        name:'type',
-                        label:'类型',
-                        type:'select',
-                        options:'default,primary,success,warning,danger,link'
-                    },
-                    {
-                        name:'size',
-                        label:'大小',
-                        type:'select',
-                        options:'small,medium,large'
-                    }
-                ],
-                component: Button,
-                desc: '按钮',
-                category: '基础组件'
-            },
-            Page: {
-                name: 'Page',
-                defaultProps: {},
-                component: Page,
-                desc: '页面',
-                category: '基础组件'
-            },
-            Header: {
-                name: 'Header',
-                defaultProps: {
-                    title: '我是标题',
-                    level: 1,
-                    align: 'left',
-                    color: '#1f2937'
-                },
-                component: Header,
-                desc: '标题',
-                category: '基础组件'
-            },
-            Input: {
-                name: 'Input',
-                defaultProps: {
-                    placeholder: '请输入内容',
-                    value: '',
-                    size: 'middle',
-                    allowClear: true
-                },
-                component: Input,
-                desc: '输入框',
-                category: '基础组件'
-            },
-            Image: {
-                name: 'Image',
-                defaultProps: {
-                    src: 'https://via.placeholder.com/300x200?text=图片',
-                    alt: '图片',
-                    width: '100%',
-                    height: 'auto',
-                    objectFit: 'cover'
-                },
-                component: Image,
-                desc: '图片',
-                category: '基础组件'
-            },
-            Text: {
-                name: 'Text',
-                defaultProps: {
-                    content: '这是一段文本',
-                    fontSize: 14,
-                    color: '#333333',
-                    textAlign: 'left'
-                },
-                component: Text,
-                desc: '文本',
-                category: '基础组件'
-            },
-            Div: {
-                name: 'Div',
-                defaultProps: {
+export const useComponentConfigStore = create<State & Action>((set) => ({
+    componentConfig: {
+        Container: {
+            name: 'Container',
+            defaultProps: {
+                style: {
                     backgroundColor: 'transparent',
-                    padding: 10,
-                    minHeight: 50,
-                    border: '1px solid #e0e0e0'
                 },
-                component: Div,
-                desc: '通用容器',
-                category: '基础组件'
             },
-            ImageUpload: {
-                name: 'ImageUpload',
-                defaultProps: {
-                    maxSize: 5,
-                    accept: 'image/*',
-                    multiple: false,
-                    showPreview: true
-                },
-                component: ImageUpload,
-                desc: '图像上传',
-                category: 'AI 标注'
-            },
-            PreAnnotation: {
-                name: 'PreAnnotation',
-                defaultProps: {
-                    title: 'AI 预标注',
-                    autoStart: false
-                },
-                component: PreAnnotation,
-                desc: '预标注',
-                category: 'AI 标注'
-            },
-            AnnotationCanvas: {
-                name: 'AnnotationCanvas',
-                defaultProps: {
-                    title: '标注画布',
-                    imageUrl: 'https://via.placeholder.com/800x600?text=待标注图像',
-                    width: 800,
-                    height: 600
-                },
-                component: AnnotationCanvas,
-                desc: '标注画布',
-                category: 'AI 标注'
-            }
+            component: Container,
+            desc: 'Poster Group',
+            category: 'Poster',
         },
-        registerComponent: (name, componentConfig) => {
-            set((state) => ({
-                ...state,
-                componentConfig: {
-                    ...state.componentConfig,
-                    [name]: componentConfig
-                }
-            }))
-        }
-    })
-)
+        Div: {
+            name: 'Div',
+            defaultProps: {
+                backgroundColor: '#ffffff',
+                padding: 12,
+                minHeight: 50,
+                border: '1px solid #e0e0e0',
+                borderRadius: 12,
+            },
+            component: Div,
+            desc: 'Shape Block',
+            category: 'Poster',
+        },
+        Text: {
+            name: 'Text',
+            defaultProps: {
+                content: 'Poster text',
+                fontSize: 14,
+                color: '#333333',
+                textAlign: 'left',
+            },
+            component: Text,
+            desc: 'Body Text',
+            category: 'Poster',
+        },
+        Header: {
+            name: 'Header',
+            defaultProps: {
+                title: 'Poster Title',
+                level: 2,
+                align: 'center',
+                color: '#1f2937',
+            },
+            component: Header,
+            desc: 'Headline',
+            category: 'Poster',
+        },
+        Title: {
+            name: 'Title',
+            defaultProps: {
+                text: 'Main Title',
+                fontSize: 48,
+                fontWeight: 700,
+                color: '#111827',
+                textAlign: 'left',
+            },
+            component: Title,
+            desc: 'Poster Title',
+            category: 'Poster',
+        },
+        Input: {
+            name: 'Input',
+            defaultProps: {
+                placeholder: 'Please enter',
+                value: '',
+                size: 'middle',
+                allowClear: true,
+            },
+            component: Input,
+            desc: 'Single-line Input',
+            category: 'Form',
+        },
+        TextArea: {
+            name: 'TextArea',
+            defaultProps: {
+                placeholder: 'Please enter long text',
+                rows: 4,
+            },
+            component: TextArea,
+            desc: 'Multi-line Input',
+            category: 'Form',
+        },
+        Select: {
+            name: 'Select',
+            defaultProps: {
+                placeholder: 'Please select',
+                options: ['Option A', 'Option B', 'Option C'],
+            },
+            component: SelectField,
+            desc: 'Dropdown Select',
+            category: 'Form',
+        },
+        RadioGroup: {
+            name: 'RadioGroup',
+            defaultProps: {
+                options: ['Option A', 'Option B', 'Option C'],
+                direction: 'vertical',
+            },
+            component: RadioGroupField,
+            desc: 'Single Choice',
+            category: 'Form',
+        },
+        CheckboxGroup: {
+            name: 'CheckboxGroup',
+            defaultProps: {
+                options: ['Option A', 'Option B', 'Option C'],
+                direction: 'vertical',
+            },
+            component: CheckboxGroupField,
+            desc: 'Multiple Choice',
+            category: 'Form',
+        },
+        Button: {
+            name: 'Button',
+            defaultProps: {
+                text: 'Call To Action',
+                type: 'primary',
+                size: 'middle',
+                shape: 'round',
+            },
+            component: Button,
+            desc: 'Button',
+            category: 'Form',
+        },
+        Page: {
+            name: 'Page',
+            defaultProps: {
+                preset: 'poster_story',
+                backgroundColor: '#ffffff',
+            },
+            component: Page,
+            desc: 'Poster Canvas',
+            category: 'Poster',
+        },
+        Image: {
+            name: 'Image',
+            defaultProps: {
+                src: 'https://via.placeholder.com/300x200?text=Image',
+                alt: 'Image',
+                width: '100%',
+                height: 'auto',
+                objectFit: 'cover',
+            },
+            component: Image,
+            desc: 'Image',
+            category: 'Poster',
+        },
+        Shape: {
+            name: 'Shape',
+            defaultProps: {
+                fill: '#111827',
+                stroke: 'transparent',
+                strokeWidth: 0,
+                radius: 16,
+            },
+            component: Shape,
+            desc: 'Color Block',
+            category: 'Poster',
+        },
+        Divider: {
+            name: 'Divider',
+            defaultProps: {
+                direction: 'horizontal',
+                color: '#d1d5db',
+                thickness: 2,
+                lineStyle: 'solid',
+            },
+            component: Divider,
+            desc: 'Divider Line',
+            category: 'Poster',
+        },
+        Icon: {
+            name: 'Icon',
+            defaultProps: {
+                icon: 'star',
+                size: 28,
+                color: '#111827',
+            },
+            component: Icon,
+            desc: 'Decorative Icon',
+            category: 'Poster',
+        },
+    },
+    registerComponent: (name, componentConfig) => {
+        set((state) => ({
+            ...state,
+            componentConfig: {
+                ...state.componentConfig,
+                [name]: componentConfig,
+            },
+        }));
+    },
+}));

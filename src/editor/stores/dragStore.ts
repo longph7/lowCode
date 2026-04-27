@@ -6,6 +6,9 @@ export interface DragState {
     draggedItem: {
         name: string;
         type: string;
+        componentType?: string;
+        previewSrc?: string;
+        props?: Record<string, any>;
     } | null;
     hoveredContainer: number | null;
     insertPreview: {
@@ -21,7 +24,16 @@ export interface DragState {
 }
 
 export interface DragActions {
-    setDragging: (isDragging: boolean, item?: { name: string; type: string }) => void;
+    setDragging: (
+        isDragging: boolean,
+        item?: {
+            name: string;
+            type: string;
+            componentType?: string;
+            previewSrc?: string;
+            props?: Record<string, any>;
+        }
+    ) => void;
     setHoveredContainer: (containerId: number | null) => void;
     setInsertPreview: (preview: DragState['insertPreview']) => void;
     clearDragState: () => void;
@@ -29,7 +41,7 @@ export interface DragActions {
 
 export const useDragStore = create<DragState & DragActions>()(
     subscribeWithSelector(
-        (set, get) => ({
+        (set) => ({
             // State
             isDragging: false,
             draggedItem: null,

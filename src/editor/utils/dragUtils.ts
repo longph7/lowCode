@@ -153,7 +153,7 @@ export function getInsertLinePosition(
  */
 export function canDropAtPosition(
     draggedItemType: string,
-    targetContainer: HTMLElement,
+    _targetContainer: HTMLElement,
     acceptedTypes: string[]
 ): boolean {
     return acceptedTypes.includes(draggedItemType);

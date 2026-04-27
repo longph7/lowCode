@@ -1,25 +1,25 @@
-import React, { useState, useCallback, useEffect } from 'react';
-import { 
-    Form, 
-    Input, 
-    Select, 
-    InputNumber, 
-    Button, 
-    Switch, 
-    Slider, 
+import { useState, useCallback, useEffect } from 'react';
+import {
+    Form,
+    Input,
+    Select,
+    InputNumber,
+    Button,
+    Switch,
+    Slider,
     Space,
     Row,
     Col,
     Divider,
     message
 } from 'antd';
-import { 
-    AlignLeftOutlined, 
-    AlignCenterOutlined, 
-    AlignRightOutlined 
+import {
+    AlignLeftOutlined,
+    AlignCenterOutlined,
+    AlignRightOutlined
 } from '@ant-design/icons';
 import OptimizedColorPicker from '../components/OptimizedColorPicker';
-import useComponentsStore from '../stores/components.tsx';
+import { useComponentsStore } from '../stores/new-components';
 import { useShallow } from 'zustand/react/shallow';
 import { useStyleChangeDetection } from '../hooks/useStyleChangeDetection';
 import type { Color } from 'antd/es/color-picker';
@@ -60,11 +60,11 @@ const BORDER_STYLE_OPTIONS = [
 ];
 
 export default function ComponentStyle() {
-    const { curComponent, updateComponent, updateComponentThrottled } = useComponentsStore(
+    const { curNode, updateNode, updateNodeThrottled } = useComponentsStore(
         useShallow((state) => ({
-            curComponent: state.curComponent,
-            updateComponent: state.updateComponent,
-            updateComponentThrottled: state.updateComponentThrottled
+            curNode: state.curNode,
+            updateNode: state.updateNode,
+            updateNodeThrottled: state.updateNodeThrottled
         }))
     );
 
@@ -81,24 +81,24 @@ export default function ComponentStyle() {
     // 当组件切换时重置样式缓存
     useEffect(() => {
         resetStyleCache();
-    }, [curComponent?.id, resetStyleCache]);
+    }, [curNode?.id, resetStyleCache]);
 
     // 获取当前组件样式
     const getCurrentStyle = useCallback(() => {
-        if (!curComponent) return {};
-        return curComponent.props?.style || {};
-    }, [curComponent]);
+        if (!curNode) return {};
+        return curNode.props?.style || {};
+    }, [curNode]);
 
     // 更新组件样式
     const updateStyle = useCallback((newStyle: Record<string, any>) => {
-        if (!curComponent) {
+        if (!curNode) {
             message.warning('请先选择一个组件');
             return;
         }
-        
-        const currentProps = curComponent.props || {};
+
+        const currentProps = curNode.props || {};
         const currentStyle = currentProps.style || {};
-        
+
         const updatedProps = {
             ...currentProps,
             style: {
@@ -106,31 +106,31 @@ export default function ComponentStyle() {
                 ...newStyle
             }
         };
-        
-        updateComponent(curComponent.id, updatedProps);
+
+        updateNode(curNode.id, { props: updatedProps });
         message.success('样式已更新');
-    }, [curComponent, updateComponent]);
+    }, [curNode, updateNode]);
 
     // 节流版本的样式更新（用于拖拽等连续操作）- 带样式变化检测
     const updateStyleThrottled = useCallback(
         createStyleUpdateFn((newStyle: Record<string, any>) => {
-            if (!curComponent) {
+            if (!curNode) {
                 return;
             }
-            
+
             const currentStyle = getCurrentStyle();
             const updatedProps = {
-                ...curComponent.props,
+                ...curNode.props,
                 style: {
                     ...currentStyle,
                     ...newStyle
                 }
             };
-            
+
             // 使用节流版本，不显示成功提示
-            updateComponentThrottled(curComponent.id, updatedProps);
+            updateNodeThrottled(curNode.id, { props: updatedProps });
         }),
-        [curComponent, updateComponentThrottled, getCurrentStyle, createStyleUpdateFn]
+        [curNode, updateNodeThrottled, getCurrentStyle, createStyleUpdateFn]
     );
 
     // 解析尺寸值（如 "100px" -> {value: 100, unit: "px"}）
@@ -172,6 +172,9 @@ export default function ComponentStyle() {
     }, [updateStyle]);
 
     // 处理圆角变化
+    void handleBackgroundColorChange;
+    void handleStyleChange;
+
     const handleBorderRadiusChange = useCallback((value: number | null) => {
         updateStyle({ borderRadius: value ? `${value}px` : '' });
     }, [updateStyle]);
@@ -242,7 +245,7 @@ export default function ComponentStyle() {
         });
     }, [getCurrentStyle, updateStyle]);
 
-    if (!curComponent) {
+    if (!curNode) {
         return (
             <div style={{ padding: '16px', textAlign: 'center', color: '#999' }}>
                 请选择一个组件查看样式设置
@@ -255,16 +258,16 @@ export default function ComponentStyle() {
     const heightParsed = parseSizeValue(currentStyle.height);
 
     return (
-        <div style={{ padding: '16px' }}>
+        <div style={{ height: '100%', overflowY: 'auto', overflowX: 'hidden', padding: '16px' }}>
             <Form layout="vertical" size="small">
                 {/* 组件信息 */}
-                <div style={{ 
-                    marginBottom: '16px', 
-                    padding: '8px', 
-                    backgroundColor: '#f5f5f5', 
-                    borderRadius: '4px' 
+                <div style={{
+                    marginBottom: '16px',
+                    padding: '8px',
+                    backgroundColor: '#f5f5f5',
+                    borderRadius: '4px'
                 }}>
-                    <strong>正在编辑：</strong> {curComponent.name}
+                    <strong>正在编辑：</strong> {curNode.type}
                 </div>
 
                 {/* 尺寸设置 */}

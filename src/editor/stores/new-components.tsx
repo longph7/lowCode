@@ -1,64 +1,91 @@
-import { create } from 'zustand'
-import { subscribeWithSelector } from 'zustand/middleware'
+import { create } from 'zustand';
+import { persist, createJSONStorage, subscribeWithSelector } from 'zustand/middleware';
 
-// 新的位置接口
-export interface Position { 
-  x: number; 
-  y: number; 
-  width: number; 
-  height: number; 
-  zIndex?: number 
+export interface Position {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  zIndex?: number;
 }
 
-// 新的组件节点接口
 export interface ComponentNode {
   id: string;
-  type: string;  // 从 name 改为 type
+  type: string;
   props: Record<string, any>;
   position: Position;
   parentId?: string;
 }
 
-// 新的状态接口
 export interface State {
-  nodes: ComponentNode[];  // 从 components 改为 nodes，扁平化存储
-  curNodeId: string | null;  // 从 curComponentId 改为 curNodeId
-  curNode: ComponentNode | null;  // 从 curComponent 改为 curNode
+  nodes: ComponentNode[];
+  curNodeId: string | null;
+  curNode: ComponentNode | null;
   mode: 'edit' | 'preview';
 }
 
-// 新的动作接口
 export interface Actions {
   addNode: (node: Omit<ComponentNode, 'id'>) => void;
+  replaceNodes: (nodes: ComponentNode[]) => void;
   deleteNode: (nodeId: string) => void;
+  clearCanvas: () => void;
   updateNode: (nodeId: string, updates: Partial<Omit<ComponentNode, 'id' | 'parentId'>>) => void;
-  updateNodeThrottled: (nodeId: string, updates: Partial<Omit<ComponentNode, 'id' | 'parentId'>>) => void; // 节流版本
+  updateNodeThrottled: (
+    nodeId: string,
+    updates: Partial<Omit<ComponentNode, 'id' | 'parentId'>>
+  ) => void;
   setCurNodeId: (nodeId: string | null) => void;
   setMode: (mode: 'edit' | 'preview') => void;
+  updateCanvas: (updates: {
+    width?: number;
+    height?: number;
+    backgroundColor?: string;
+    preset?: string;
+  }) => void;
 }
 
-// 深度比较对象是否相等
+const STORE_NAME = 'lowcode-poster-components';
+
+function createDefaultRootNode(): ComponentNode {
+  return {
+    id: 'root_page',
+    type: 'Page',
+    props: {
+      preset: 'poster_story',
+      backgroundColor: '#ffffff',
+    },
+    position: { x: 0, y: 0, width: 1080, height: 1920 },
+    parentId: undefined,
+  };
+}
+
+function createDefaultState(): State {
+  return {
+    nodes: [createDefaultRootNode()],
+    curNodeId: null,
+    curNode: null,
+    mode: 'edit',
+  };
+}
+
 function deepEqual(obj1: any, obj2: any): boolean {
   if (obj1 === obj2) return true;
-  
   if (obj1 == null || obj2 == null) return obj1 === obj2;
-  
   if (typeof obj1 !== 'object' || typeof obj2 !== 'object') return obj1 === obj2;
-  
+
   const keys1 = Object.keys(obj1);
   const keys2 = Object.keys(obj2);
-  
+
   if (keys1.length !== keys2.length) return false;
-  
-  for (let key of keys1) {
+
+  for (const key of keys1) {
     if (!keys2.includes(key)) return false;
     if (!deepEqual(obj1[key], obj2[key])) return false;
   }
-  
+
   return true;
 }
 
-// 节流函数实现
 function throttle<T extends (...args: any[]) => any>(
   func: T,
   delay: number
@@ -69,171 +96,181 @@ function throttle<T extends (...args: any[]) => any>(
 
   return (...args: Parameters<T>) => {
     const now = Date.now();
-    
-    // 检查参数是否真正发生变化
+
     if (lastArgs && deepEqual(args, lastArgs)) {
       return;
     }
-    
+
     if (now - lastCall >= delay) {
       lastCall = now;
       lastArgs = args;
       func(...args);
-    } else {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-      timeoutId = setTimeout(() => {
-        // 在延迟执行前再次检查参数是否变化
-        if (!lastArgs || !deepEqual(args, lastArgs)) {
-          lastCall = Date.now();
-          lastArgs = args;
-          func(...args);
-        }
-        timeoutId = null;
-      }, delay - (now - lastCall));
+      return;
     }
+
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+
+    timeoutId = window.setTimeout(() => {
+      if (!lastArgs || !deepEqual(args, lastArgs)) {
+        lastCall = Date.now();
+        lastArgs = args;
+        func(...args);
+      }
+      timeoutId = null;
+    }, delay - (now - lastCall));
   };
 }
 
-// 生成唯一ID的辅助函数
 const generateId = (): string => {
-  return `node_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  return `node_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 };
 
-// 根据ID获取节点的辅助函数
 export function getNodeById(id: string | null, nodes: ComponentNode[]): ComponentNode | null {
   if (id === null) {
     return null;
   }
-  return nodes.find(node => node.id === id) || null;
+  return nodes.find((node) => node.id === id) || null;
 }
 
-// 获取所有子节点的辅助函数
 export function getChildNodes(parentId: string, nodes: ComponentNode[]): ComponentNode[] {
-  return nodes.filter(node => node.parentId === parentId);
+  return nodes.filter((node) => node.parentId === parentId);
 }
 
-// 获取节点路径的辅助函数
 export function getNodePath(id: string, nodes: ComponentNode[]): ComponentNode[] {
   const node = getNodeById(id, nodes);
   if (!node || !node.parentId) {
     return node ? [node] : [];
   }
-  
+
   const path = getNodePath(node.parentId, nodes);
   path.push(node);
   return path;
 }
 
+function ensureValidState(state: Partial<State> | undefined): State {
+  const fallback = createDefaultState();
+  const rawNodes = Array.isArray(state?.nodes) ? state!.nodes : fallback.nodes;
+  const hasRoot = rawNodes.some((node) => node.id === 'root_page');
+  const nodes = hasRoot ? rawNodes : [createDefaultRootNode(), ...rawNodes];
+  const curNodeId =
+    state?.curNodeId && nodes.some((node) => node.id === state.curNodeId) ? state.curNodeId : null;
+
+  return {
+    nodes,
+    curNodeId,
+    curNode: getNodeById(curNodeId, nodes),
+    mode: state?.mode === 'preview' ? 'preview' : 'edit',
+  };
+}
+
 export const useComponentsStore = create<State & Actions>()(
-  subscribeWithSelector(
-    (set, get) => ({
-      nodes: [{
-        id: 'root_page',
-        type: 'Page',
-        props: {},
-        position: { x: 0, y: 0, width: 800, height: 600 },
-        parentId: undefined
-      }],
-      curNodeId: null,
-      curNode: null,
-      mode: 'edit',
-      
+  persist(
+    subscribeWithSelector((set, get) => ({
+      ...createDefaultState(),
+
       addNode: (nodeData) => {
-        set((state) => {
-          const newNode: ComponentNode = {
-            ...nodeData,
-            id: generateId()
-          };
-          
-          return {
-            nodes: [...state.nodes, newNode]
-          };
+        set((state) => ({
+          nodes: [...state.nodes, { ...nodeData, id: generateId() }],
+        }));
+      },
+
+      replaceNodes: (nodes) => {
+        const nextState = ensureValidState({
+          nodes,
+          curNodeId: null,
+          mode: get().mode,
+        });
+
+        set({
+          nodes: nextState.nodes,
+          curNodeId: null,
+          curNode: null,
         });
       },
-      
+
       deleteNode: (nodeId) => {
         set((state) => {
-          // 删除目标节点及其所有子节点
           const nodeIdsToDelete = getAllDescendantIds(nodeId, state.nodes);
           nodeIdsToDelete.push(nodeId);
-          
-          const updatedNodes = state.nodes.filter(node => !nodeIdsToDelete.includes(node.id));
-          
-          // 如果被删除的是当前选中节点，则清除选中状态
-          let newCurNodeId = state.curNodeId;
-          let newCurNode = state.curNode;
-          
-          if (nodeIdsToDelete.includes(state.curNodeId!)) {
-            newCurNodeId = null;
-            newCurNode = null;
-          }
-          
+
+          const updatedNodes = state.nodes.filter((node) => !nodeIdsToDelete.includes(node.id));
+          const nextCurNodeId = nodeIdsToDelete.includes(state.curNodeId || '') ? null : state.curNodeId;
+
           return {
             nodes: updatedNodes,
-            curNodeId: newCurNodeId,
-            curNode: newCurNode
+            curNodeId: nextCurNodeId,
+            curNode: getNodeById(nextCurNodeId, updatedNodes),
           };
         });
       },
-      
+
+      clearCanvas: () => {
+        set((state) => {
+          const rootNode =
+            state.nodes.find((node) => node.id === 'root_page') || createDefaultRootNode();
+
+          return {
+            nodes: [rootNode],
+            curNodeId: null,
+            curNode: null,
+          };
+        });
+      },
+
       updateNode: (nodeId, updates) => {
         set((state) => {
-          const nodeIndex = state.nodes.findIndex(node => node.id === nodeId);
+          const nodeIndex = state.nodes.findIndex((node) => node.id === nodeId);
           if (nodeIndex === -1) {
             return state;
           }
-          
+
           const node = state.nodes[nodeIndex];
           const updatedNode = { ...node, ...updates };
-          
-          // 检查是否有实际变化
-          const hasChanges = Object.keys(updates).some(key => 
-            !deepEqual(node[key as keyof ComponentNode], updatedNode[key as keyof ComponentNode])
+          const hasChanges = Object.keys(updates).some(
+            (key) =>
+              !deepEqual(
+                node[key as keyof ComponentNode],
+                updatedNode[key as keyof ComponentNode]
+              )
           );
-          
+
           if (!hasChanges) {
             return state;
           }
-          
+
           const newNodes = [...state.nodes];
           newNodes[nodeIndex] = updatedNode;
-          
-          // 如果更新的是当前选中的节点，也要更新 curNode
-          let newCurNode = state.curNode;
-          if (state.curNodeId === nodeId) {
-            newCurNode = updatedNode;
-          }
-          
+
           return {
             nodes: newNodes,
-            curNode: newCurNode
+            curNode: state.curNodeId === nodeId ? updatedNode : state.curNode,
           };
         });
       },
-      
-      updateNodeThrottled: throttle((nodeId: string, updates: Partial<Omit<ComponentNode, 'id' | 'parentId'>>) => {
-        const { updateNode } = get();
-        updateNode(nodeId, updates);
-      }, 100),
-      
+
+      updateNodeThrottled: throttle(
+        (nodeId: string, updates: Partial<Omit<ComponentNode, 'id' | 'parentId'>>) => {
+          get().updateNode(nodeId, updates);
+        },
+        100
+      ),
+
       setCurNodeId: (nodeId) => {
         set((state) => {
           if (state.curNodeId === nodeId) {
             return state;
           }
-          
-          const newNode = getNodeById(nodeId, state.nodes);
-          
+
           return {
             ...state,
             curNodeId: nodeId,
-            curNode: newNode
+            curNode: getNodeById(nodeId, state.nodes),
           };
         });
       },
-      
+
       setMode: (mode) => {
         set((state) => {
           if (mode === 'preview') {
@@ -241,28 +278,75 @@ export const useComponentsStore = create<State & Actions>()(
               ...state,
               mode,
               curNodeId: null,
-              curNode: null
+              curNode: null,
             };
           }
+
           return {
             ...state,
-            mode
+            mode,
           };
         });
       },
-    })
+
+      updateCanvas: (updates) => {
+        set((state) => {
+          const rootIndex = state.nodes.findIndex((node) => node.id === 'root_page');
+          if (rootIndex === -1) {
+            return state;
+          }
+
+          const rootNode = state.nodes[rootIndex];
+          const nextRootNode: ComponentNode = {
+            ...rootNode,
+            props: {
+              ...rootNode.props,
+              ...(updates.backgroundColor !== undefined
+                ? { backgroundColor: updates.backgroundColor }
+                : {}),
+              ...(updates.preset !== undefined ? { preset: updates.preset } : {}),
+            },
+            position: {
+              ...rootNode.position,
+              ...(updates.width !== undefined ? { width: updates.width } : {}),
+              ...(updates.height !== undefined ? { height: updates.height } : {}),
+            },
+          };
+
+          const nextNodes = [...state.nodes];
+          nextNodes[rootIndex] = nextRootNode;
+
+          return {
+            nodes: nextNodes,
+            curNode: state.curNodeId === 'root_page' ? nextRootNode : state.curNode,
+          };
+        });
+      },
+    })),
+    {
+      name: STORE_NAME,
+      storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({
+        nodes: state.nodes,
+        curNodeId: state.curNodeId,
+        mode: state.mode,
+      }),
+      merge: (persistedState, currentState) => ({
+        ...currentState,
+        ...ensureValidState(persistedState as Partial<State> | undefined),
+      }),
+    }
   )
 );
 
-// 获取所有后代节点ID的辅助函数
 function getAllDescendantIds(parentId: string, nodes: ComponentNode[]): string[] {
   const descendantIds: string[] = [];
-  const directChildren = nodes.filter(node => node.parentId === parentId);
-  
+  const directChildren = nodes.filter((node) => node.parentId === parentId);
+
   for (const child of directChildren) {
     descendantIds.push(child.id);
     descendantIds.push(...getAllDescendantIds(child.id, nodes));
   }
-  
+
   return descendantIds;
 }

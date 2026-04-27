@@ -1,4 +1,4 @@
-import React from 'react';
+import type { CSSProperties } from 'react';
 import type { CommonComponentProps } from '../../stores/interface.ts';
 
 interface ImageProps extends CommonComponentProps {
@@ -10,44 +10,29 @@ interface ImageProps extends CommonComponentProps {
     borderRadius?: number;
 }
 
-export default function Image({ 
-    id, 
-    name, 
-    src = 'https://via.placeholder.com/300x200?text=图片',
-    alt = '图片',
+export default function Image({
+    id,
+    src = 'https://via.placeholder.com/300x200?text=Image',
+    alt = 'Image',
     width = '100%',
     height = 'auto',
     objectFit = 'cover',
     borderRadius = 0,
     style,
-    className
+    className,
 }: ImageProps) {
-    // 基础图片样式
-    const baseImageStyles: React.CSSProperties = {
+    const imageStyle: CSSProperties = {
         width,
         height,
         objectFit,
         borderRadius: `${borderRadius}px`,
         display: 'block',
-        maxWidth: '100%'
-    };
-
-    // 合并容器样式
-    const mergedContainerStyle: React.CSSProperties = {
-        ...style
+        maxWidth: '100%',
     };
 
     return (
-        <div 
-            data-component-id={id}
-            style={mergedContainerStyle}
-            className={className}
-        >
-            <img
-                src={src}
-                alt={alt}
-                style={baseImageStyles}
-            />
+        <div data-component-id={id} style={style} className={className}>
+            <img src={src} alt={alt} style={imageStyle} draggable={false} />
         </div>
     );
 }

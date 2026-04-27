@@ -1,0 +1,174 @@
+📁 LowCode Editor - 完整目录树
+=====================================
+
+lowCode/
+│
+├── 📄 配置文件
+│   ├── .gitignore                           # Git 忽略配置
+│   ├── eslint.config.js                     # ESLint 配置
+│   ├── index.html                           # HTML 入口
+│   ├── package.json                         # 项目配置
+│   ├── pnpm-lock.yaml                       # 依赖锁定
+│   ├── postcss.config.js                    # PostCSS 配置
+│   ├── tailwind.config.js                   # Tailwind 配置
+│   ├── tsconfig.json                        # TS 根配置
+│   ├── tsconfig.app.json                    # TS 应用配置
+│   ├── tsconfig.node.json                   # TS Node 配置
+│   └── vite.config.ts                       # Vite 配置
+│
+├── 📚 文档文件
+│   ├── README.md                            # 项目说明
+│   ├── lowCode.md                           # 详细文档
+│   ├── BUGFIX_SUMMARY.md                    # Bug修复
+│   ├── DRAG_FEATURES.md                     # 拖拽功能
+│   ├── IMPLEMENTATION_SUMMARY.md            # 实现总结
+│   ├── PERFORMANCE_OPTIMIZATION.md          # 性能优化
+│   ├── USAGE_GUIDE.md                       # 使用指南
+│   ├── PROJECT_STRUCTURE.md                 # 项目结构 ⭐ NEW
+│   ├── DIRECTORY_TREE.txt                   # 目录树 ⭐ NEW
+│   └── docs/
+│       ├── AI_ANNOTATION_GUIDE.md           # AI标注指南 ⭐ NEW
+│       ├── component-style-guide.md         # 组件样式指南
+│       ├── interview-qa.md                  # 面试问答
+│       └── preview-mode-guide.md            # 预览模式指南
+│
+├── 🎨 public/                               # 静态资源
+│   └── vite.svg                             # Vite 图标
+│
+└── 💻 src/                                  # 源代码
+    ├── main.tsx                             # 应用入口 ⭐
+    ├── App.tsx                              # 根组件
+    ├── index.css                            # 全局样式
+    ├── output.css                           # Tailwind 输出
+    ├── tailwind.config.js                   # Tailwind 配置
+    ├── vite-env.d.ts                        # Vite 类型
+    │
+    ├── 📁 assets/                           # 静态资源
+    │   └── react.svg                        # React 图标
+    │
+    ├── 📁 components/                       # 全局通用组件
+    │   ├── ErrorBoundary/
+    │   │   └── index.tsx                    # 错误边界
+    │   ├── Header/
+    │   │   └── index.tsx                    # 顶部导航
+    │   ├── Hover/
+    │   │   └── index.tsx                    # 悬停蒙层
+    │   ├── Mateialltem/
+    │   │   └── index.tsx                    # 物料项
+    │   ├── SelectedMask/
+    │   │   └── index.tsx                    # 选中蒙层
+    │   ├── SvgHover/
+    │   │   └── index.tsx                    # SVG 悬停
+    │   └── SvgSelectedMask/
+    │       └── index.tsx                    # SVG 选中
+    │
+    ├── 📁 demo/                             # 演示组件
+    │   └── ColorPickerDemo.tsx              # 颜色选择器演示
+    │
+    └── 📁 editor/                           # 编辑器核心 ⭐⭐⭐
+        ├── HybridLowcodeEditor.tsx          # 混合编辑器
+        ├── SvgLowcodeEditor.tsx             # SVG 编辑器
+        │
+        ├── 📁 components/                   # 编辑器专用组件
+        │   ├── DragPreviewStyles.css        # 拖拽预览样式
+        │   ├── DropPreview.tsx              # 拖拽预览组件
+        │   ├── GlobalDragPreview.tsx        # 全局拖拽预览
+        │   └── OptimizedColorPicker.tsx     # 优化颜色选择器 ⭐
+        │
+        ├── 📁 EditoArea/                    # 编辑画布 ⭐⭐⭐
+        │   └── index.tsx                    # 主画布组件
+        │
+        ├── 📁 hooks/                        # 自定义 Hooks ⭐⭐
+        │   ├── useEnhancedMaterialDrops.ts  # 增强拖拽 Hook ⭐
+        │   ├── useMaterialDrops.ts          # 基础拖拽 Hook
+        │   ├── useStyleChangeDetection.ts   # 样式检测 Hook ⭐ NEW
+        │   ├── useSvgMaterialDrops.ts       # SVG 拖拽 Hook
+        │   └── useThrottle.ts               # 节流 Hook ⭐
+        │
+        ├── 📁 Materail/                     # 组件物料面板
+        │   └── index.tsx                    # 左侧组件库 ⭐
+        │
+        ├── 📁 materials/                    # 可拖拽组件库 ⭐⭐⭐⭐⭐
+        │   │
+        │   ├── 📂 基础组件 (8个)
+        │   │   ├── page/
+        │   │   │   └── index.tsx            # 页面容器
+        │   │   ├── container/
+        │   │   │   └── index.tsx            # 通用容器
+        │   │   ├── div/
+        │   │   │   └── index.tsx            # Div容器(Flex)
+        │   │   ├── button/
+        │   │   │   └── index.tsx            # 按钮
+        │   │   ├── header/
+        │   │   │   └── index.tsx            # 标题
+        │   │   ├── input/
+        │   │   │   └── index.tsx            # 输入框
+        │   │   ├── image/
+        │   │   │   └── index.tsx            # 图片
+        │   │   └── text/
+        │   │       └── index.tsx            # 文本
+        │   │
+        │   ├── 📂 AI 标注组件 (3个) ⭐ NEW
+        │   │   ├── image-upload/
+        │   │   │   └── index.tsx            # 图像上传
+        │   │   ├── pre-annotation/
+        │   │   │   └── index.tsx            # AI 预标注
+        │   │   └── annotation-canvas/
+        │   │       └── index.tsx            # 标注画布
+        │   │
+        │   └── 📂 SVG 组件 (1个)
+        │       └── svg-container/
+        │           └── index.tsx            # SVG 容器
+        │
+        ├── 📁 Setting/                      # 属性设置面板 ⭐⭐⭐
+        │   ├── index.tsx                    # 设置面板主组件
+        │   ├── ComponentProps.tsx           # 属性设置 ⭐
+        │   ├── ComponentStyle.tsx           # 样式设置 ⭐
+        │   └── ComponentEvent.tsx           # 事件设置
+        │
+        ├── 📁 stores/                       # 状态管理 ⭐⭐⭐⭐⭐
+        │   ├── components.tsx               # 组件树状态 ⭐⭐⭐
+        │   ├── component-config.tsx         # 组件注册中心 ⭐⭐⭐
+        │   ├── dragStore.ts                 # 拖拽状态
+        │   ├── interface.ts                 # TS 接口定义
+        │   └── new-components.tsx           # 新组件状态
+        │
+        ├── 📁 utils/                        # 工具函数 ⭐⭐
+        │   ├── dragUtils.ts                 # 拖拽工具函数
+        │   └── data-migration.ts            # 数据迁移工具
+        │
+        ├── 📁 CanvasRenderer/               # Canvas 渲染器
+        │   └── index.tsx                    # Canvas 渲染组件
+        │
+        ├── 📁 HybridEditorArea/             # 混合编辑区域
+        │   └── index.tsx                    # 混合编辑器画布
+        │
+        ├── 📁 SvgEditorArea/                # SVG 编辑区域
+        │   └── index.tsx                    # SVG 编辑画布
+        │
+        └── 📁 SvgEditorLayer/               # SVG 编辑层
+            └── index.tsx                    # SVG 编辑图层
+
+
+=====================================
+图例说明:
+⭐⭐⭐⭐⭐ = 核心重要文件
+⭐⭐⭐⭐   = 非常重要文件
+⭐⭐⭐     = 重要文件
+⭐⭐       = 一般重要文件
+⭐         = 辅助文件
+NEW       = 新增文件
+
+核心模块:
+1. src/editor/stores/         状态管理中心
+2. src/editor/materials/      组件库
+3. src/editor/EditoArea/      编辑画布
+4. src/editor/Setting/        属性面板
+5. src/editor/hooks/          自定义Hooks
+
+总计:
+- 文件总数: 118+
+- 组件数量: 11个 (8基础 + 3AI标注)
+- 代码行数: 15,000+ 行
+- 文档数量: 12个
+=====================================

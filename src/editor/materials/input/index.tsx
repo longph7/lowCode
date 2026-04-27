@@ -1,4 +1,4 @@
-import React from 'react';
+import type { ChangeEvent, CSSProperties } from 'react';
 import { Input as AntInput } from 'antd';
 import type { CommonComponentProps } from '../../stores/interface.ts';
 
@@ -9,12 +9,11 @@ interface InputProps extends CommonComponentProps {
     disabled?: boolean;
     allowClear?: boolean;
     maxLength?: number;
-    onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    onChange?: (e: ChangeEvent<HTMLInputElement>) => void;
 }
 
-export default function Input({ 
-    id, 
-    name, 
+export default function Input({
+    id,
     placeholder = '请输入内容',
     value = '',
     size = 'middle',
@@ -23,19 +22,14 @@ export default function Input({
     maxLength,
     onChange,
     style,
-    className
+    className,
 }: InputProps) {
-    // 合并样式
-    const mergedStyle: React.CSSProperties = {
-        ...style
+    const mergedStyle: CSSProperties = {
+        ...style,
     };
 
     return (
-        <div 
-            data-component-id={id}
-            style={mergedStyle}
-            className={className}
-        >
+        <div data-component-id={id} style={mergedStyle} className={className}>
             <AntInput
                 placeholder={placeholder}
                 value={value}

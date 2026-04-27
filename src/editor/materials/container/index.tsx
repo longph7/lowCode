@@ -1,4 +1,4 @@
-import React, { useRef } from 'react'
+﻿import React, { useRef } from 'react'
 import type { CommonComponentProps } from '../../stores/interface.ts'
 import useEnhancedMaterialDrops from '../../hooks/useEnhancedMaterialDrops.ts'
 import DropPreview from '../../components/DropPreview.tsx'
@@ -6,17 +6,17 @@ import DropPreview from '../../components/DropPreview.tsx'
 export default function Container({ id, children, style, className }: CommonComponentProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const { canDrop, isOver, dropRef, dropPreview } = useEnhancedMaterialDrops(
-        ['Button', 'Container', 'Header', 'Input', 'Image', 'Text', 'Div', 'ImageUpload', 'PreAnnotation', 'AnnotationCanvas'], 
+        ['Container', 'Div', 'Header', 'Title', 'Text', 'Image', 'Shape', 'Divider', 'Icon'],
         id
     );
 
-    // 组合 refs
+    // 缁勫悎 refs
     const combinedRef = (node: HTMLDivElement) => {
         containerRef.current = node;
         dropRef(node);
     };
     
-    // 基础样式
+    // 鍩虹鏍峰紡
     const baseStyles: React.CSSProperties = {
         minHeight: '100px',
         padding: '20px',
@@ -26,7 +26,7 @@ export default function Container({ id, children, style, className }: CommonComp
         transition: 'all 0.2s ease'
     };
 
-    // 合并样式，style中的样式优先级最高
+    // 鍚堝苟鏍峰紡锛宻tyle涓殑鏍峰紡浼樺厛绾ф渶楂?
     const mergedStyles: React.CSSProperties = {
         ...baseStyles,
         ...style
@@ -44,3 +44,5 @@ export default function Container({ id, children, style, className }: CommonComp
         </div>
     )
 }
+
+

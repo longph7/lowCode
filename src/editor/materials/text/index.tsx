@@ -1,4 +1,4 @@
-import React from 'react';
+import type { CSSProperties } from 'react';
 import type { CommonComponentProps } from '../../stores/interface.ts';
 
 interface TextProps extends CommonComponentProps {
@@ -11,9 +11,8 @@ interface TextProps extends CommonComponentProps {
     textDecoration?: 'none' | 'underline' | 'line-through';
 }
 
-export default function Text({ 
-    id, 
-    name, 
+export default function Text({
+    id,
     content = '这是一段文本',
     fontSize = 14,
     color = '#333333',
@@ -22,25 +21,20 @@ export default function Text({
     lineHeight = 1.5,
     textDecoration = 'none',
     style,
-    className
+    className,
 }: TextProps) {
-    // 合并样式，优先使用style中的值，然后是props中的值
-    const mergedStyle: React.CSSProperties = {
+    const mergedStyle: CSSProperties = {
         fontSize: `${fontSize}px`,
         color,
         fontWeight,
         textAlign,
         lineHeight,
         textDecoration,
-        ...style // style中的样式优先级最高
+        ...style,
     };
 
     return (
-        <div 
-            data-component-id={id}
-            style={mergedStyle}
-            className={className}
-        >
+        <div data-component-id={id} style={mergedStyle} className={className}>
             {content}
         </div>
     );
